@@ -1,0 +1,42 @@
+{
+    "name": "basit95/wp-enterprise-content-hub",
+    "description": "Enterprise-oriented WordPress plugin demonstrating scalable architecture, Gutenberg development, REST APIs, automated testing and CI/CD.",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Basit Ahmed"
+        }
+    ],
+    "require": {
+        "php": ">=8.1"
+    },
+    "require-dev": {
+        "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+        "phpcompatibility/php-compatibility": "^9.3",
+        "phpunit/phpunit": "^10.5",
+        "squizlabs/php_codesniffer": "^3.10",
+        "wp-coding-standards/wpcs": "^3.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "EnterpriseContentHub\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "EnterpriseContentHub\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "lint": "phpcs",
+        "lint:fix": "phpcbf"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
+}

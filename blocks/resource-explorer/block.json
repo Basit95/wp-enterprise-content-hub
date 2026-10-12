@@ -1,0 +1,44 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "enterprise-content-hub/resource-explorer",
+	"version": "1.0.0",
+	"title": "Enterprise Resource Explorer",
+	"category": "widgets",
+	"icon": "filter",
+	"description": "Display and filter enterprise resources.",
+	"textdomain": "wp-enterprise-content-hub",
+	"attributes": {
+		"department": {
+			"type": "string",
+			"default": ""
+		},
+		"perPage": {
+			"type": "number",
+			"default": 6
+		},
+		"showSearch": {
+			"type": "boolean",
+			"default": true
+		},
+		"showDepartment": {
+			"type": "boolean",
+			"default": true
+		},
+		"showDate": {
+			"type": "boolean",
+			"default": true
+		},
+		"layout": {
+			"type": "string",
+			"default": "grid"
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": ["wide", "full"]
+	},
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css"
+}

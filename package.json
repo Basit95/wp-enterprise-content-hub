@@ -1,0 +1,24 @@
+{
+  "name": "wp-enterprise-content-hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Enterprise-oriented WordPress Gutenberg plugin.",
+  "scripts": {
+    "build:editor": "wp-scripts build blocks/resource-explorer/index.js --output-path=build/resource-explorer",
+    "copy:block-assets": "node scripts/copy-block-assets.mjs",
+    "build": "npm run build:editor && npm run copy:block-assets",
+    "start": "wp-scripts start blocks/resource-explorer/index.js --output-path=build/resource-explorer",
+    "lint:js": "wp-scripts lint-js blocks",
+    "lint:css": "wp-scripts lint-style \"blocks/**/*.scss\"",
+    "lint:css:fix": "wp-scripts lint-style \"blocks/**/*.scss\" --fix",
+    "format": "wp-scripts format blocks"
+  },
+  "devDependencies": {
+    "@wordpress/scripts": "30.18.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.6",
+    "prettier": "^3.9.10",
+    "typescript": "^5.7.3"
+  }
+}

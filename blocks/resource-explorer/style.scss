@@ -1,0 +1,229 @@
+.ech-resource-explorer {
+	width: 100%;
+	margin: 32px 0 48px;
+	max-width: none !important;
+}
+
+.wp-block-post-title {
+	max-width: none !important;
+}
+
+.ech-resource-toolbar {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 240px;
+	gap: 16px;
+	margin-bottom: 26px;
+	padding: 16px;
+	border: 1px solid #e5e7eb;
+	border-radius: 12px;
+	background: #fff;
+	box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
+}
+
+.ech-resource-search-wrap,
+.ech-resource-department-wrap {
+	width: 100%;
+}
+
+.ech-resource-search,
+.ech-resource-department {
+	width: 100%;
+	min-height: 46px;
+	padding: 11px 14px;
+	border: 1px solid #d1d5db;
+	border-radius: 8px;
+	background: #fff;
+	color: #111827;
+	font-size: 15px;
+	line-height: 1.4;
+	transition:
+		border-color 0.2s ease,
+		box-shadow 0.2s ease;
+}
+
+.ech-resource-search::placeholder {
+	color: #9ca3af;
+}
+
+.ech-resource-search:hover,
+.ech-resource-department:hover {
+	border-color: #9ca3af;
+}
+
+.ech-resource-search:focus,
+.ech-resource-department:focus {
+	outline: none;
+	border-color: #2271b1;
+	box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.12);
+}
+
+.ech-resource-loading,
+.ech-resource-empty,
+.ech-resource-error {
+	padding: 22px;
+	margin-bottom: 24px;
+	border: 1px solid #e5e7eb;
+	border-radius: 10px;
+	background: #f9fafb;
+	color: #4b5563;
+	font-size: 14px;
+	text-align: center;
+}
+
+.ech-resources {
+	display: grid;
+	gap: 20px;
+}
+
+.ech-layout-grid .ech-resources {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ech-layout-list .ech-resources {
+	grid-template-columns: 1fr;
+}
+
+.ech-resource-card {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	min-height: 235px;
+	padding: 22px;
+	overflow: hidden;
+	border: 1px solid #e5e7eb;
+	border-radius: 12px;
+	background: #fff;
+	box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
+	transition:
+		transform 0.22s ease,
+		box-shadow 0.22s ease,
+		border-color 0.22s ease;
+}
+
+.ech-resource-card::before {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 3px;
+	background: #2271b1;
+	content: "";
+	opacity: 0;
+	transform: scaleX(0);
+	transform-origin: left;
+	transition:
+		transform 0.22s ease,
+		opacity 0.22s ease;
+}
+
+.ech-resource-card:hover {
+	transform: translateY(-4px);
+	border-color: #cbd5e1;
+	box-shadow: 0 12px 28px rgba(15, 23, 42, 0.09);
+}
+
+.ech-resource-card:hover::before {
+	opacity: 1;
+	transform: scaleX(1);
+}
+
+.ech-resource-meta {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 14px;
+	color: #94a3b8;
+	font-size: 12px;
+}
+
+.ech-resource-meta span:first-child {
+	display: inline-flex;
+	align-items: center;
+	padding: 5px 10px;
+	border-radius: 999px;
+	background: #f1f5f9;
+	color: #334155;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.2;
+}
+
+.ech-resource-title {
+	margin: 0 0 10px;
+	color: #0f172a;
+	font-size: 20px;
+	font-weight: 600;
+	line-height: 1.35;
+}
+
+.ech-resource-title a {
+	color: inherit;
+	text-decoration: none;
+}
+
+.ech-resource-title a:hover {
+	color: #2271b1;
+}
+
+.ech-resource-excerpt {
+	flex: 1;
+	margin-bottom: 20px;
+	color: #64748b;
+	font-size: 14px;
+	line-height: 1.65;
+}
+
+.ech-resource-excerpt p {
+	margin-top: 0;
+}
+
+.ech-resource-excerpt p:last-child {
+	margin-bottom: 0;
+}
+
+.ech-resource-link {
+	display: inline-flex;
+	align-items: center;
+	width: fit-content;
+	margin-top: auto;
+	color: #2271b1;
+	font-size: 14px;
+	font-weight: 700;
+	text-decoration: none;
+	transition:
+		gap 0.2s ease,
+		color 0.2s ease;
+}
+
+.ech-resource-link:hover {
+	color: #135e96;
+	text-decoration: underline;
+}
+
+@media (max-width: 1024px) {
+
+	.ech-layout-grid .ech-resources {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 700px) {
+
+	.ech-resource-toolbar {
+		grid-template-columns: 1fr;
+	}
+
+	.ech-layout-grid .ech-resources {
+		grid-template-columns: 1fr;
+	}
+
+	.ech-resource-card {
+		min-height: auto;
+	}
+
+	.ech-resource-meta {
+		align-items: flex-start;
+		flex-direction: column;
+	}
+}
