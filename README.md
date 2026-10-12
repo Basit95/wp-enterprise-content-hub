@@ -1,5 +1,7 @@
 # WP Enterprise Content Hub
 
+[![CI](https://github.com/Basit95/wp-enterprise-content-hub/actions/workflows/ci.yml/badge.svg)](https://github.com/Basit95/wp-enterprise-content-hub/actions/workflows/ci.yml)
+
 Enterprise-oriented WordPress plugin demonstrating scalable plugin architecture, Gutenberg development, REST APIs, automated testing, coding standards, Docker-based local development, and CI/CD.
 
 ## Features
