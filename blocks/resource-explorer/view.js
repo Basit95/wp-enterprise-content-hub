@@ -1,12 +1,19 @@
 const explorers = document.querySelectorAll('.ech-resource-explorer');
 
 explorers.forEach((explorer) => {
+	const resultsContainer = explorer.querySelector('.ech-resources');
+	const endpoint = explorer.dataset.endpoint;
+
+	if (!endpoint || !resultsContainer) {
+		return;
+	}
+
 	const searchInput = explorer.querySelector('.ech-resource-search');
 	const departmentSelect = explorer.querySelector('.ech-resource-department');
-	const resultsContainer = explorer.querySelector('.ech-resources');
 	const loadingElement = explorer.querySelector('.ech-resource-loading');
 	const emptyElement = explorer.querySelector('.ech-resource-empty');
-	const perPage = explorer.dataset.perPage || 6;
+
+	const perPage = explorer.dataset.perPage || '6';
 	const showDate = explorer.dataset.showDate === '1';
 
 	let timeout = null;
@@ -17,10 +24,11 @@ explorers.forEach((explorer) => {
 		params.set('per_page', perPage);
 		params.set('page', '1');
 
-		if (searchInput && searchInput.value.trim()) {
+		if (searchInput?.value.trim()) {
 			params.set('search', searchInput.value.trim());
 		}
-		if (departmentSelect && departmentSelect.value) {
+
+		if (departmentSelect?.value) {
 			params.set('department', departmentSelect.value);
 		}
 
@@ -28,9 +36,17 @@ explorers.forEach((explorer) => {
 		emptyElement?.setAttribute('hidden', '');
 
 		try {
-			const response = await fetch(
-				`/wp-json/ech/v1/resources?${params.toString()}`
-			);
+			const url = new URL(endpoint);
+
+			params.forEach((value, key) => {
+				url.searchParams.set(key, value);
+			});
+
+			const response = await fetch(url.toString(), {
+				headers: {
+					Accept: 'application/json',
+				},
+			});
 
 			if (!response.ok) {
 				throw new Error('Unable to load resources.');
@@ -40,93 +56,99 @@ explorers.forEach((explorer) => {
 
 			renderResources(responseData.data || []);
 		} catch (error) {
-			resultsContainer.innerHTML = `
-                <div class="ech-resource-error">
-                    Unable to load resources.
-                </div>
-            `;
+			renderError();
 		} finally {
 			loadingElement?.setAttribute('hidden', '');
 		}
 	}
 
 	function renderResources(resources) {
-		resultsContainer.innerHTML = '';
+		resultsContainer.replaceChildren();
 
 		if (!resources.length) {
 			emptyElement?.removeAttribute('hidden');
-
 			return;
 		}
 
 		emptyElement?.setAttribute('hidden', '');
 
 		resources.forEach((resource) => {
-			const article = document.createElement('article');
-
-			article.className = 'ech-resource-card';
-
-			const departments = resource.departments || [];
-
-			article.innerHTML = `
-                <div class="ech-resource-meta">
-                    ${
-						departments.length
-							? `<span>${escapeHtml(
-									departments.join(', ')
-								)}</span>`
-							: ''
-					}
-
-                    ${
-						showDate && resource.updated_at
-							? `<span>${formatDate(resource.updated_at)}</span>`
-							: ''
-					}
-                </div>
-
-                <h3 class="ech-resource-title">
-                    <a href="${escapeAttribute(resource.permalink)}">
-                        ${escapeHtml(resource.title)}
-                    </a>
-                </h3>
-
-                ${
-					resource.excerpt
-						? `
-                            <div class="ech-resource-excerpt">
-                                ${resource.excerpt}
-                            </div>
-                        `
-						: ''
-				}
-
-                <a
-                    class="ech-resource-link"
-                    href="${escapeAttribute(resource.permalink)}"
-                >
-                    View Resource →
-                </a>
-            `;
-
-			resultsContainer.appendChild(article);
+			resultsContainer.appendChild(createResourceCard(resource));
 		});
 	}
 
-	function escapeHtml(value) {
-		const element = document.createElement('div');
+	function createResourceCard(resource) {
+		const article = document.createElement('article');
 
-		element.textContent = value || '';
+		article.className = 'ech-resource-card';
 
-		return element.innerHTML;
+		const meta = document.createElement('div');
+
+		meta.className = 'ech-resource-meta';
+
+		const departments = Array.isArray(resource.departments)
+			? resource.departments
+			: [];
+
+		if (departments.length) {
+			const department = document.createElement('span');
+
+			department.textContent = departments.join(', ');
+
+			meta.appendChild(department);
+		}
+
+		if (showDate && resource.updated_at) {
+			const date = document.createElement('span');
+
+			date.textContent = formatDate(resource.updated_at);
+
+			meta.appendChild(date);
+		}
+
+		article.appendChild(meta);
+
+		const heading = document.createElement('h3');
+
+		heading.className = 'ech-resource-title';
+
+		const titleLink = document.createElement('a');
+
+		titleLink.href = resource.permalink || '#';
+		titleLink.textContent = resource.title || '';
+
+		heading.appendChild(titleLink);
+		article.appendChild(heading);
+
+		if (resource.excerpt) {
+			const excerpt = document.createElement('div');
+
+			excerpt.className = 'ech-resource-excerpt';
+			excerpt.textContent = resource.excerpt;
+
+			article.appendChild(excerpt);
+		}
+
+		const resourceLink = document.createElement('a');
+
+		resourceLink.className = 'ech-resource-link';
+		resourceLink.href = resource.permalink || '#';
+		resourceLink.textContent = 'View Resource →';
+
+		article.appendChild(resourceLink);
+
+		return article;
 	}
 
-	function escapeAttribute(value) {
-		return String(value || '')
-			.replace(/&/g, '&amp;')
-			.replace(/"/g, '&quot;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;');
+	function renderError() {
+		resultsContainer.replaceChildren();
+
+		const error = document.createElement('div');
+
+		error.className = 'ech-resource-error';
+		error.textContent = 'Unable to load resources.';
+
+		resultsContainer.appendChild(error);
 	}
 
 	function formatDate(value) {

@@ -22,6 +22,11 @@ Enterprise-oriented WordPress plugin demonstrating scalable plugin architecture,
 - GitHub Actions CI
 - PHP 8.1, 8.2, and 8.3 CI validation
 - Responsive grid and list layouts
+- Repository-level caching
+- Automatic cache invalidation
+- WP-CLI cache management
+- WP-CLI resource seeding
+- Portable REST endpoint handling
 
 ## Screenshots
 
@@ -490,7 +495,7 @@ The main goals are:
 Current stable release:
 
 ```text
-v1.0.0
+v1.1.0
 ```
 
 ## License

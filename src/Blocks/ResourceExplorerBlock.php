@@ -136,6 +136,7 @@ final class ResourceExplorerBlock {
 
 		<section
 			class="ech-resource-explorer ech-layout-<?php echo esc_attr( $layout ); ?>"
+			data-endpoint="<?php echo esc_url( rest_url( 'ech/v1/resources' ) ); ?>"
 			data-per-page="<?php echo esc_attr( (string) $per_page ); ?>"
 			data-show-date="<?php echo $show_date ? '1' : '0'; ?>"
 		>
