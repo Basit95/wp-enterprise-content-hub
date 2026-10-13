@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/Basit95/wp-enterprise-content-hub/actions/workflows/ci.yml/badge.svg)](https://github.com/Basit95/wp-enterprise-content-hub/actions/workflows/ci.yml)
 
-Enterprise-oriented WordPress plugin demonstrating scalable plugin architecture, Gutenberg development, REST APIs, automated testing, coding standards, Docker-based local development, and CI/CD.
+Enterprise-oriented WordPress plugin demonstrating scalable plugin architecture, Gutenberg development, REST APIs, automated testing, repository and service patterns, caching, WP-CLI tooling, coding standards, Docker-based local development, and CI/CD.
 
 ## Features
 
@@ -15,18 +15,24 @@ Enterprise-oriented WordPress plugin demonstrating scalable plugin architecture,
 - Custom WordPress capabilities
 - Repository pattern
 - Service layer architecture
+- Repository-level caching
+- Cache abstraction through `CacheStore`
+- Automatic cache invalidation
+- WordPress transient cache implementation
+- WP-CLI cache management
+- WP-CLI resource seeding
+- Idempotent demo data seeding
+- Portable REST endpoint handling
+- Secure frontend DOM rendering
 - PHPUnit unit tests
+- Cached repository unit tests
 - WordPress Coding Standards with PHPCS
 - JavaScript and SCSS linting
 - Docker-based local development
+- Docker WP-CLI integration
 - GitHub Actions CI
 - PHP 8.1, 8.2, and 8.3 CI validation
 - Responsive grid and list layouts
-- Repository-level caching
-- Automatic cache invalidation
-- WP-CLI cache management
-- WP-CLI resource seeding
-- Portable REST endpoint handling
 
 ## Screenshots
 
@@ -62,7 +68,7 @@ Automated CI pipeline validating PHP 8.1, PHP 8.2, PHP 8.3, PHPUnit, PHPCS, Java
 
 ## Architecture
 
-The plugin separates WordPress-specific infrastructure from application and domain logic to improve maintainability, testability, and extensibility.
+The plugin separates WordPress-specific infrastructure from application and domain logic to improve maintainability, testability, extensibility, and operational reliability.
 
 ```text
 src/
@@ -70,16 +76,24 @@ src/
 │   └── ResourceQuery.php
 ├── Blocks/
 │   └── ResourceExplorerBlock.php
+├── Cache/
+│   └── ResourceCacheInvalidator.php
+├── Cli/
+│   ├── CacheCommand.php
+│   └── ResourceCommand.php
 ├── Content/
 │   ├── ResourcePostType.php
 │   └── ResourceTaxonomy.php
 ├── Contracts/
+│   ├── CacheStore.php
 │   └── ResourceRepository.php
 ├── Domain/
 │   └── Resource/
 │       └── Resource.php
 ├── Infrastructure/
-│   └── WordPressResourceRepository.php
+│   ├── CachedResourceRepository.php
+│   ├── WordPressResourceRepository.php
+│   └── WordPressTransientCache.php
 ├── Lifecycle/
 │   ├── Activator.php
 │   └── Deactivator.php
@@ -98,20 +112,94 @@ src/
 ```text
 Gutenberg Block / REST Request
             ↓
-     ResourceController
-            ↓
       ResourceService
             ↓
-   ResourceRepository
-            ↓
-WordPressResourceRepository
-            ↓
-        WP_Query
+ CachedResourceRepository
+       ↓            ↓
+  Cache Hit     Cache Miss
+                    ↓
+     WordPressResourceRepository
+                    ↓
+                 WP_Query
 ```
 
 The `ResourceRepository` contract allows the application layer to remain independent from direct WordPress query implementation details.
 
-This also makes the service layer easier to test with fake repository implementations.
+The `CachedResourceRepository` decorates the repository implementation and adds caching without changing the service layer.
+
+The `CacheStore` abstraction keeps cache storage independent from the application layer.
+
+Detailed architecture documentation is available in:
+
+```text
+docs/architecture.md
+```
+
+Architecture decisions are documented under:
+
+```text
+docs/adr/
+```
+
+## Caching
+
+The plugin includes repository-level caching for resource queries.
+
+### Cache Contract
+
+```text
+src/Contracts/CacheStore.php
+```
+
+The cache contract provides:
+
+```text
+get()
+set()
+flush()
+```
+
+### WordPress Cache Implementation
+
+```text
+src/Infrastructure/WordPressTransientCache.php
+```
+
+The default implementation uses the WordPress Transient API.
+
+### Cached Repository
+
+```text
+src/Infrastructure/CachedResourceRepository.php
+```
+
+The cached repository handles:
+
+- Individual resource lookups
+- Resource search results
+- Resource counts
+
+### Cache Invalidation
+
+Cache invalidation is handled by:
+
+```text
+src/Cache/ResourceCacheInvalidator.php
+```
+
+The cache is invalidated when:
+
+- A resource is created
+- A resource is updated
+- A resource is deleted
+- Resource department assignments change
+- A department is created
+- A department is updated
+- A department is deleted
+
+The cache implementation uses versioned cache keys.
+
+Instead of scanning and deleting every transient, the cache version is incremented so previous cache entries are no longer used and can expire naturally.
 
 ## REST API
 
@@ -164,6 +252,14 @@ Example response structure:
 }
 ```
 
+### Individual Resource
+
+```text
+GET /wp-json/ech/v1/resources/{id}
+```
+
+Returns a single resource by ID.
+
 ### Departments
 
 ```text
@@ -204,6 +300,16 @@ Production assets are generated into:
 build/resource-explorer/
 ```
 
+The frontend REST endpoint is generated by WordPress using:
+
+```php
+rest_url( 'ech/v1/resources' )
+```
+
+rather than relying on a hardcoded `/wp-json/` URL.
+
+This improves compatibility with WordPress subdirectory installations and custom URL configurations.
+
 ## Security
 
 The plugin includes:
@@ -214,11 +320,68 @@ The plugin includes:
 - Escaped frontend output
 - Published-resource visibility rules
 - Capability assignment during plugin activation
+- Portable REST URL generation
+- Safe dynamic frontend DOM rendering
 
 Custom capabilities are managed through:
 
 ```text
 src/Security/Capabilities.php
+```
+
+Dynamic frontend resource rendering uses DOM APIs such as `textContent` instead of inserting REST response values directly through raw `innerHTML`.
+
+## Plugin Lifecycle
+
+During activation the plugin:
+
+1. Adds custom resource capabilities
+2. Registers the Resource post type
+3. Registers the Department taxonomy
+4. Flushes WordPress rewrite rules
+
+Registering the post type and taxonomy before flushing rewrite rules ensures their permalink rules are generated correctly.
+
+## WP-CLI
+
+The plugin includes WP-CLI administration commands.
+
+### Clear Cache
+
+```bash
+wp ech cache clear
+```
+
+Example:
+
+```text
+Success: Enterprise Content Hub cache cleared.
+```
+
+### Seed Demo Resources
+
+```bash
+wp ech resources seed
+```
+
+First execution:
+
+```text
+Created resource: Application Security Policy
+Created resource: Employee Onboarding Guide
+Created resource: Financial Approval Policy
+Success: Seeding complete. Created: 3, skipped: 0.
+```
+
+The seed command is idempotent.
+
+Running it again skips previously seeded resources:
+
+```text
+Skipped existing resource: Application Security Policy
+Skipped existing resource: Employee Onboarding Guide
+Skipped existing resource: Financial Approval Policy
+Success: Seeding complete. Created: 0, skipped: 3.
 ```
 
 ## Requirements
@@ -322,13 +485,25 @@ Current unit tests cover:
 - Invalid resource IDs
 - Repository abstraction
 - Pagination metadata
+- Cached individual resource lookups
+- Cached missing-resource results
+- Cached resource search results
+- Cached resource counts
 
 The project currently includes:
 
 ```text
-11 tests
-30 assertions
+15 tests
 ```
+
+Test support includes:
+
+```text
+tests/Support/FakeResourceRepository.php
+tests/Support/FakeCacheStore.php
+```
+
+The caching tests verify that the underlying repository is not queried repeatedly after a cache value has been stored.
 
 ## PHP Coding Standards
 
@@ -425,6 +600,8 @@ The repository includes a Docker Compose environment containing:
 - MySQL 8
 - WP-CLI
 
+WordPress and WP-CLI share the same WordPress filesystem volume.
+
 Start:
 
 ```bash
@@ -443,6 +620,24 @@ View containers:
 docker compose ps
 ```
 
+Check WordPress through WP-CLI:
+
+```bash
+docker compose run --rm wpcli wp core version
+```
+
+Clear plugin cache:
+
+```bash
+docker compose run --rm wpcli wp ech cache clear
+```
+
+Seed demo resources:
+
+```bash
+docker compose run --rm wpcli wp ech resources seed
+```
+
 ## Project Structure
 
 ```text
@@ -455,11 +650,61 @@ wp-enterprise-content-hub/
 ├── build/
 │   └── resource-explorer/
 ├── docs/
-│   └── images/
+│   ├── adr/
+│   │   └── 001-repository-and-cache-decorators.md
+│   ├── images/
+│   │   ├── 01-frontend-resource-explorer.png
+│   │   ├── 02-gutenberg-block-editor.png
+│   │   ├── 03-rest-api.png
+│   │   ├── 04-rest-api-department.png
+│   │   └── 05-github-actions-ci.png
+│   └── architecture.md
 ├── scripts/
 │   └── copy-block-assets.mjs
 ├── src/
+│   ├── Application/
+│   │   └── ResourceQuery.php
+│   ├── Blocks/
+│   │   └── ResourceExplorerBlock.php
+│   ├── Cache/
+│   │   └── ResourceCacheInvalidator.php
+│   ├── Cli/
+│   │   ├── CacheCommand.php
+│   │   └── ResourceCommand.php
+│   ├── Content/
+│   │   ├── ResourcePostType.php
+│   │   └── ResourceTaxonomy.php
+│   ├── Contracts/
+│   │   ├── CacheStore.php
+│   │   └── ResourceRepository.php
+│   ├── Domain/
+│   │   └── Resource/
+│   │       └── Resource.php
+│   ├── Infrastructure/
+│   │   ├── CachedResourceRepository.php
+│   │   ├── WordPressResourceRepository.php
+│   │   └── WordPressTransientCache.php
+│   ├── Lifecycle/
+│   │   ├── Activator.php
+│   │   └── Deactivator.php
+│   ├── Rest/
+│   │   ├── DepartmentController.php
+│   │   └── ResourceController.php
+│   ├── Security/
+│   │   └── Capabilities.php
+│   ├── Services/
+│   │   └── ResourceService.php
+│   └── Plugin.php
 ├── tests/
+│   ├── Support/
+│   │   ├── FakeCacheStore.php
+│   │   └── FakeResourceRepository.php
+│   ├── Unit/
+│   │   ├── CachedResourceRepositoryTest.php
+│   │   ├── ResourceQueryTest.php
+│   │   ├── ResourceServiceTest.php
+│   │   └── ResourceTest.php
+│   └── bootstrap.php
 ├── composer.json
 ├── composer.lock
 ├── docker-compose.yml
@@ -469,6 +714,26 @@ wp-enterprise-content-hub/
 ├── phpcs.xml.dist
 ├── phpunit.xml.dist
 └── README.md
+```
+
+## Architecture Documentation
+
+Detailed architecture documentation is available at:
+
+```text
+docs/architecture.md
+```
+
+Architecture Decision Records are stored in:
+
+```text
+docs/adr/
+```
+
+The repository and cache decorator decision is documented in:
+
+```text
+docs/adr/001-repository-and-cache-decorators.md
 ```
 
 ## Engineering Goals
@@ -481,10 +746,15 @@ The main goals are:
 - Separation of concerns
 - Dependency inversion
 - Repository pattern
+- Decorator pattern
 - Service layer design
 - Testable business logic
 - REST API design
 - Modern Gutenberg development
+- Cache abstraction
+- Repository-level caching
+- Automatic cache invalidation
+- WP-CLI operational tooling
 - Automated code quality
 - Reproducible local development
 - Continuous integration
@@ -497,6 +767,20 @@ Current stable release:
 ```text
 v1.1.0
 ```
+
+### v1.1.0 Highlights
+
+- Repository-level caching
+- WordPress transient cache implementation
+- Automatic resource cache invalidation
+- WP-CLI cache management
+- WP-CLI demo resource seeding
+- Cached repository unit tests
+- Improved plugin activation lifecycle
+- Portable WordPress REST endpoint handling
+- Safer frontend resource rendering
+- Architecture documentation
+- Docker WP-CLI integration
 
 ## License
 
